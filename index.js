@@ -48,7 +48,7 @@ function miniHtml(content, options){
     }
   }
 
-  let $ = _cheerio.load(content)
+  let $ = _cheerio.load(content, {decodeEntities: false})
   //压缩html内js
   if(htmlOptions.js){
     $('script').each(function() {
