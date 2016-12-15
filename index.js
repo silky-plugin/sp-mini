@@ -1,7 +1,6 @@
 const _cleanCss = require('clean-css');
 const _uglifyjs = require('uglify-js');
-const _cheerio = require('cheerio');
-
+const _htmlMinifier = require('html-minifier')
 var _defaultSetting = {
   ignore: ["(\\.min\\.css)$","(\\.min\\.js)$"],
   js:{},
@@ -38,46 +37,38 @@ function miniJS(content, options){
 //压缩html内js和css
 function miniHtml(content, options){
   let htmlOptions = options.html;
-  let jsOptions = options.js;
-  let cssOptions = options.css;
-
   if(typeof htmlOptions == 'boolean'){
     htmlOptions = {
-      js: true,
-      css: true
+      minifyJS: true,
+      minifyCSS: true,
+      removeComments: true,
+      collapseWhitespace: true
     }
+    return _htmlMinifier.minify(content, htmlOptions)
   }
-
-  let $ = _cheerio.load(content, {decodeEntities: false})
-  //压缩html内js
+  let defineOptions = {};
   if(htmlOptions.js){
-    $('script').each(function() {
-      if($(this).attr('src')){return}
-      let type = $(this).attr('type');
-      if(type && type !== 'javascript'){return}
-      $(this).text(miniJS($(this).text(), jsOptions))
-    });
+    defineOptions.minifyJS = true
   }
-  //压缩html内css
+  if(htmlOptions.html){
+    defineOptions.removeComments = true
+    defineOptions.collapseWhitespace = true
+  }
   if(htmlOptions.css){
-    $('style').each(function() {
-      let type = $(this).attr('type');
-      if(type && type !== 'text/css'){return}
-      $(this).text(miniCss($(this).text(), cssOptions))
-    });
+    defineOptions.minifyCSS = true
   }
-  return $.html()
+  return _htmlMinifier.minify(content, defineOptions)
 }
 
 exports.registerPlugin = (cli, options)=>{
   
   cli.utils.extend(_defaultSetting, options);
 
-  cli.registerHook('build:didCompile', (data, content, cb)=>{
+  cli.registerHook('build:didCompile', (buildConfig, data, content, cb)=>{
     let inputFilePath = data.inputFilePath;
     let outFilePath = data.outputFilePath;
     if(ignore(outFilePath, _defaultSetting.ignore)){
-      return cb(null, data, content)
+      return cb(null, content)
     }
     try{
       if(/(\.css)$/.test(outFilePath) && _defaultSetting.css){
@@ -87,14 +78,14 @@ exports.registerPlugin = (cli, options)=>{
       }else if(/(\.html)$/.test(outFilePath) && _defaultSetting.html){
         content = miniHtml(content, _defaultSetting)
       }else{
-        return  cb(null, data, content);
+        return  cb(null, content);
       }
       cli.log.info(`minify ${data.inputFileRelativePath} -> ${data.outputFileRelativePath}`);
     }catch(e){
       cli.log.error(`parse ${data.fileName} error`)
       return cb(e)
     }
-    cb(null, data, content);
+    cb(null, content);
   }, 99)
 
 }

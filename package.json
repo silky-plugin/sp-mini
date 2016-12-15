@@ -6,8 +6,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "cheerio": "^0.22.0",
     "clean-css": "^3.4.21",
+    "html-minifier": "^3.2.3",
     "uglify-js": "^2.7.4"
   }
 }
