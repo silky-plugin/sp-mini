@@ -22,16 +22,23 @@ function miniCss(content, options){
   if(typeof options == 'boolean'){
     options = {}
   }
-  return new _cleanCss(options).minify(content).styles;
+  try{
+    return new _cleanCss(options).minify(content).styles;
+  }catch(e){
+    console.error(e)
+  }
 }
 
 //压缩js文件
-function miniJS(content, options){
+function miniJS(content, options, z){
   if(typeof options == 'boolean'){
     options = {}
   }
-  options.fromString = true;
-  return _uglifyjs.minify(content, options).code
+  try{
+    return _uglifyjs.minify(content, options).code
+  }catch(e){
+    console.error(e)
+  }
 }
 
 //压缩html内js和css
@@ -85,6 +92,7 @@ exports.registerPlugin = (cli, options)=>{
       cli.log.error(`parse ${data.fileName} error`)
       return cb(e)
     }
+
     cb(null, content);
   }, 99)
 
