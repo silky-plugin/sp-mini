@@ -32,6 +32,12 @@ default: `{}`, 压缩选项， 参考：[https://github.com/jakubpawlowicz/clean
 
 如果不要压缩请设置为false
 
+兼容配置:
+
+```
+{"compatibility": "ie7"} 兼容 "#fff\9"的写法
+```
+
 ## html
 
 default: `{js: true, css: true}`.  如果 需要压缩html内js 设置为true， 压缩选项 共用 上面js的设置。 如果不需要压缩js,则设置为false。 html内css同上。
