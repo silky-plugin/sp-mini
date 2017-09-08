@@ -23,14 +23,15 @@ function miniCss(content, options){
     options = {}
   }
   try{
-    return new _cleanCss(options).minify(content).styles;
+    content = new _cleanCss(options).minify(content).styles;
+    return content
   }catch(e){
     console.error(e)
   }
 }
 
 //压缩js文件
-function miniJS(content, options, z){
+function miniJS(content, options){
   if(typeof options == 'boolean'){
     options = {}
   }
@@ -67,6 +68,21 @@ function miniHtml(content, options){
   return _htmlMinifier.minify(content, defineOptions)
 }
 
+function getMiniFn(filePath, setting){
+  let arr = [
+    {reg: /(\.css)$/, params: setting.css, fn: miniCss},
+    {reg: /(\.js)$/, params: setting.js, fn: miniJS},
+    {reg: /(\.html)$/, params: setting, fn: miniHtml}
+  ]
+  for(let i = 0; i < arr.length; i++){
+    let item = arr[i]
+    if(item.reg.test(filePath)){
+      return function(content){return item.fn(content, item.params)}
+    }
+  }
+  return null
+}
+
 exports.registerPlugin = (cli, options)=>{
   
   cli.utils.extend(_defaultSetting, options);
@@ -77,16 +93,12 @@ exports.registerPlugin = (cli, options)=>{
     if(ignore(outFilePath, _defaultSetting.ignore)){
       return cb(null, content)
     }
+    let fn = getMiniFn(outFilePath, _defaultSetting)
+    if(!fn){
+      return cb(null, content)
+    }
     try{
-      if(/(\.css)$/.test(outFilePath) && _defaultSetting.css){
-        content = miniCss(content, _defaultSetting.css)
-      }else if(/(\.js)$/.test(outFilePath) && _defaultSetting.js){
-        content = miniJS(content, _defaultSetting.js)
-      }else if(/(\.html)$/.test(outFilePath) && _defaultSetting.html){
-        content = miniHtml(content, _defaultSetting)
-      }else{
-        return  cb(null, content);
-      }
+      content = fn(content)
       cli.log.info(`minify ${data.inputFileRelativePath} -> ${data.outputFileRelativePath}`);
     }catch(e){
       cli.log.error(`parse ${data.fileName} error`)
