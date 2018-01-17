@@ -96,7 +96,7 @@ exports.registerPlugin = (cli, options)=>{
   cli.registerHook('preview:beforeResponse', (req, data, content, cb)=>{
     let pathname = data.realPath;
     if(!/(\.html)$/.test(pathname)){
-      return cb(null,  responseContent)
+      return cb(null,  content)
     }
     try{
       content = _htmlMinifier.minify(content, htmlSetting)
