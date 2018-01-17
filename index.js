@@ -44,27 +44,7 @@ function miniJS(content, options){
 
 //压缩html内js和css
 function miniHtml(content, options){
-  let htmlOptions = options.html;
-  if(typeof htmlOptions == 'boolean'){
-    htmlOptions = {
-      minifyJS: true,
-      minifyCSS: true,
-      removeComments: true,
-      collapseWhitespace: true
-    }
-    return _htmlMinifier.minify(content, htmlOptions)
-  }
-  let defineOptions = {};
-  if(htmlOptions.js){
-    defineOptions.minifyJS = true
-  }
-  if(htmlOptions.html){
-    defineOptions.removeComments = true
-    defineOptions.collapseWhitespace = true
-  }
-  if(htmlOptions.css){
-    defineOptions.minifyCSS = true
-  }
+  let defineOptions = getHtmlSetting(options)
   return _htmlMinifier.minify(content, defineOptions)
 }
 
@@ -83,10 +63,49 @@ function getMiniFn(filePath, setting){
   return null
 }
 
+const getHtmlSetting = (options)=>{
+  let htmlOptions = Object.assign({},options.html);
+  if(typeof htmlOptions == 'boolean'){
+    htmlOptions = {
+      minifyJS: true,
+      minifyCSS: true,
+      removeComments: true,
+      collapseWhitespace: true
+    }
+    return _htmlMinifier.minify(content, htmlOptions)
+  }
+  let defineOptions = {};
+  if(htmlOptions.js){
+    defineOptions.minifyJS = true
+    delete htmlOptions["js"]
+  }
+  if(htmlOptions.css){
+    defineOptions.minifyCSS = true
+    delete htmlOptions["js"]
+  }
+  Object.assign(defineOptions, htmlOptions)
+  return defineOptions
+}
+
 exports.registerPlugin = (cli, options)=>{
   
   cli.utils.extend(_defaultSetting, options);
 
+  let htmlSetting = getHtmlSetting(_defaultSetting)
+
+  cli.registerHook('preview:beforeResponse', (req, data, content, cb)=>{
+    let pathname = data.realPath;
+    if(!/(\.html)$/.test(pathname)){
+      return cb(null,  responseContent)
+    }
+    try{
+      content = _htmlMinifier.minify(content, htmlSetting)
+      content = content.replace(/\n{2,}/g, "\n")
+      cb(null, content)
+    }catch(e){
+      cb(e)
+    }
+  }, 99)
   cli.registerHook('build:didCompile', (buildConfig, data, content, cb)=>{
     let inputFilePath = data.inputFilePath;
     let outFilePath = data.outputFilePath;
@@ -104,8 +123,6 @@ exports.registerPlugin = (cli, options)=>{
       cli.log.error(`parse ${data.fileName} error`)
       return cb(e)
     }
-
     cb(null, content);
   }, 99)
-
 }
