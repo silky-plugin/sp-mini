@@ -22,12 +22,7 @@ function miniCss(content, options){
   if(typeof options == 'boolean'){
     options = {}
   }
-  try{
-    content = new _cleanCss(options).minify(content).styles;
-    return content
-  }catch(e){
-    console.error(e)
-  }
+  return new _cleanCss(options).minify(content).styles;
 }
 
 //压缩js文件
@@ -35,11 +30,7 @@ function miniJS(content, options){
   if(typeof options == 'boolean'){
     options = {}
   }
-  try{
-    return _uglifyjs.minify(content, options).code
-  }catch(e){
-    console.error(e)
-  }
+  return _uglifyjs.minify(content, options).code
 }
 
 //压缩html内js和css
@@ -106,23 +97,17 @@ exports.registerPlugin = (cli, options)=>{
   //     cb(e)
   //   }
   // }, 99)
-  cli.registerHook('build:didCompile', (buildConfig, data, content, cb)=>{
+  cli.registerHook('build:didCompile', (buildConfig, data, content)=>{
     let inputFilePath = data.inputFilePath;
     let outFilePath = data.outputFilePath;
     if(ignore(outFilePath, _defaultSetting.ignore)){
-      return cb(null, content)
+      return content
     }
     let fn = getMiniFn(outFilePath, _defaultSetting)
     if(!fn){
-      return cb(null, content)
+      return content
     }
-    try{
-      content = fn(content)
-      cli.log.info(`minify ${data.inputFileRelativePath} -> ${data.outputFileRelativePath}`);
-    }catch(e){
-      cli.log.error(`parse ${data.fileName} error`)
-      return cb(e)
-    }
-    cb(null, content);
+    cli.log.info(`minify ${data.inputFileRelativePath} -> ${data.outputFileRelativePath}`);
+    return fn(content)
   }, 99)
 }
